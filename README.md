@@ -13,8 +13,8 @@ gcc main.c -o scheduler
 | Member | Function | Options |
 |--------|----------|---------|
 | A | `preemptive_algorithm()` | SRTF, Preemptive Priority, Round Robin |
-| B | `non_preemptive_algorithm_1()` | FCFS, SJF, Priority |
-| C | `non_preemptive_algorithm_2()` | FCFS, SJF, Priority (different from B) |
+| B | `non_preemptive_algorithm_1()` | FCFS|
+| C | `non_preemptive_algorithm_2()` | SJF|
 
 **Must do in your algorithm**:
 1. Handle idle time → use `gantt[i].pid = -1`
