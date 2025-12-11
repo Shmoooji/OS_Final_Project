@@ -24,13 +24,13 @@ void display_menu()
     printf("========================================\n");
     printf("     CPU SCHEDULING ALGORITHMS\n");
     printf("========================================\n");
-    printf("[1] Preemptive Algorithm  (Round Robin)\n");
+    printf("[1] Round Robin\n");
     printf("    (e.g., SRTF / Preemptive Priority / Round Robin)\n");
     printf("\n");
-    printf("[2] Non-Preemptive Algorithm 1(Modified FCFS with Aging)\n");
+    printf("[2] Modified FCFS with Aging\n");
     printf("    (e.g., FCFS / SJF / Non-preemptive Priority)\n");
     printf("\n");
-    printf("[3] Non-Preemptive Algorithm 2\n");
+    printf("[3] Shortest Job First (SJF)\n");
     printf("    (e.g., FCFS / SJF / Non-preemptive Priority)\n");
     printf("\n");
     printf("[4] Run All Algorithms\n");

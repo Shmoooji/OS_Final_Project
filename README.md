@@ -5,16 +5,16 @@
 ```bash
 gcc main.c -o scheduler
 ./scheduler
-# Enter: processes.txt
+# Enter: output/processes.txt
 ```
 
 **Your task**: Implement your assigned function in `functions.h` (bottom of file).
 
-| Member | Function | Options |
-|--------|----------|---------|
-| A | `preemptive_algorithm()` | SRTF, Preemptive Priority, Round Robin |
-| B | `non_preemptive_algorithm_1()` | FCFS|
-| C | `non_preemptive_algorithm_2()` | SJF|
+| Member | Function | Algorithm | Status |
+|--------|----------|-----------|--------|
+| A | `preemptive_algorithm()` | Round Robin | COMPLETE |
+| B | `non_preemptive_algorithm_1()` | Modified FCFS with Aging | COMPLETE |
+| C | `non_preemptive_algorithm_2()` | SJF | COMPLETE |
 
 **Must do in your algorithm**:
 1. Handle idle time → use `gantt[i].pid = -1`
@@ -24,15 +24,28 @@ gcc main.c -o scheduler
 
 ---
 
+## Project Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Round Robin (Preemptive) | COMPLETE | Fully functional with time quantum, handles idle time |
+| Modified FCFS with Aging | COMPLETE | Uses dynamic scoring for starvation prevention |
+| SJF (Non-preemptive) | COMPLETE | Selects shortest burst time, FCFS tie-breaker |
+| Core Infrastructure | COMPLETE | File I/O, sorting, display, metrics |
+| Test Data | COMPLETE | 2 test files in `output/` folder |
+
+---
+
 ## Summary
 
 ### Project Structure
 ```
 project/
 ├── main.c           # Menu system (DONE - don't modify)
-├── functions.h      # Utilities (DONE) + Algorithm stubs (YOUR WORK)
-├── processes.txt    # Test file (normal)
-└── processes_with_idle.txt  # Test file (has idle gaps)
+├── functions.h      # Utilities + Algorithms implementation
+└── output/
+    ├── processes.txt           # Test file (normal - no idle gaps)
+    └── processes_with_idle.txt # Test file (has idle gaps)
 ```
 
 ### Input File Format (CSV)
@@ -170,8 +183,33 @@ void preemptive_algorithm(Process processes[], int n, GanttBlock gantt[], int *g
 
 ## Checklist
 
-- [ ] Algorithm handles idle time (pid = -1)
-- [ ] Gantt chart fills correctly
-- [ ] completion_time set for each process
-- [ ] Works with both test files
-- [ ] No hardcoded values
+- [x] Algorithm handles idle time (pid = -1)
+- [x] Gantt chart fills correctly
+- [x] completion_time set for each process
+- [x] Works with both test files
+- [x] No hardcoded values
+- [x] Round Robin (Preemptive) implemented
+- [x] Modified FCFS with Aging implemented
+- [x] SJF (Non-preemptive Algorithm 2) implemented
+
+## Implemented Algorithms Details
+
+### 1. Round Robin (Preemptive) - `preemptive_algorithm()`
+- Uses configurable time quantum (user input)
+- Queue-based scheduling with FIFO order
+- Handles process arrivals dynamically
+- Merges consecutive Gantt blocks for same process
+- Properly handles idle time when no processes are ready
+
+### 2. Modified FCFS with Aging - `non_preemptive_algorithm_1()`
+- Uses dynamic scoring formula: `score = (wait_time * 2.0) - (burst_time * 0.5) - (priority * 3.0)`
+- Prevents starvation through aging mechanism
+- Re-evaluates process selection after each completion
+- Tie-breaker uses arrival time (true FCFS fallback)
+
+### 3. SJF - `non_preemptive_algorithm_2()`
+- Selects the process with the shortest burst time among available processes
+- Tie-breaker: if burst times are equal, uses arrival time (FCFS)
+- Non-preemptive: once a process starts, it runs to completion
+- Handles idle time when no processes are available
+- Optimal for minimizing average waiting time

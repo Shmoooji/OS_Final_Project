@@ -636,9 +636,106 @@ void modified_FCFS_with_aging(Process processes[], int n, GanttBlock gantt[], in
  */
 void non_preemptive_algorithm_2(Process processes[], int n, GanttBlock gantt[], int *gantt_size)
 {
-    // TODO: Implement your second non-preemptive algorithm
-    printf("\n[!] Non-preemptive algorithm 2 not yet implemented.\n");
+    /*
+     * SHORTEST JOB FIRST (SJF) - Non-Preemptive
+     * ==========================================
+     * Selection Criteria: Process with the smallest burst_time
+     * Tie-breaker: If burst times are equal, use arrival_time (FCFS)
+     *
+     * Characteristics:
+     * - Optimal for minimizing average waiting time
+     * - Non-preemptive: once a process starts, it runs to completion
+     * - May cause starvation for longer processes if short ones keep arriving
+     */
+
+    int current_time = 0;
+    int completed = 0;
     *gantt_size = 0;
+
+    printf("\n===== SHORTEST JOB FIRST (SJF) - Non-Preemptive =====\n");
+
+    while (completed < n)
+    {
+        int selected = -1;
+        int shortest_burst = 999999;
+
+        // Find process with shortest burst time among those that have arrived
+        for (int i = 0; i < n; i++)
+        {
+            if (!processes[i].completed && processes[i].arrival_time <= current_time)
+            {
+                // Select if burst time is shorter
+                if (processes[i].burst_time < shortest_burst)
+                {
+                    shortest_burst = processes[i].burst_time;
+                    selected = i;
+                }
+                // Tie-breaker: same burst time -> pick earlier arrival (FCFS)
+                else if (processes[i].burst_time == shortest_burst && selected != -1)
+                {
+                    if (processes[i].arrival_time < processes[selected].arrival_time)
+                    {
+                        selected = i;
+                    }
+                }
+            }
+        }
+
+        if (selected == -1)
+        {
+            // No process available - CPU is idle
+            // Find the next process to arrive
+            int next_arrival = 999999;
+            for (int i = 0; i < n; i++)
+            {
+                if (!processes[i].completed && processes[i].arrival_time > current_time)
+                {
+                    if (processes[i].arrival_time < next_arrival)
+                    {
+                        next_arrival = processes[i].arrival_time;
+                    }
+                }
+            }
+
+            if (next_arrival != 999999)
+            {
+                // Add IDLE block to Gantt chart
+                gantt[*gantt_size].pid = -1;
+                gantt[*gantt_size].start_time = current_time;
+                gantt[*gantt_size].end_time = next_arrival;
+                (*gantt_size)++;
+
+                printf("[IDLE] Time %d -> %d (waiting for next arrival)\n",
+                       current_time, next_arrival);
+                current_time = next_arrival;
+            }
+        }
+        else
+        {
+            // Execute the selected process to completion (non-preemptive)
+            Process *p = &processes[selected];
+
+            int wait_time = current_time - p->arrival_time;
+            printf("[P%d] Start: %d | Arrival: %d | Waited: %d | Burst: %d (shortest available)\n",
+                   p->pid, current_time, p->arrival_time, wait_time, p->burst_time);
+
+            // Add to Gantt chart
+            gantt[*gantt_size].pid = p->pid;
+            gantt[*gantt_size].start_time = current_time;
+            gantt[*gantt_size].end_time = current_time + p->burst_time;
+            (*gantt_size)++;
+
+            // Update time and mark process as completed
+            current_time += p->burst_time;
+            p->completion_time = current_time;
+            p->completed = 1;
+            completed++;
+
+            printf("     Completed at time %d\n", current_time);
+        }
+    }
+
+    printf("\nAll processes completed at time %d\n", current_time);
 }
 
 #endif // FUNCTIONS_H
