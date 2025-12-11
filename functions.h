@@ -213,6 +213,8 @@ void calculate_metrics(Process processes[], int n, float *avg_wt, float *avg_tat
 // Display process table with results
 void display_results(Process processes[], int n)
 {
+    float avg_wt, avg_tat;
+    calculate_metrics(processes, n, &avg_wt, &avg_tat);
     printf("\n");
     printf("+-----+----------+-------+----------+------------+------------+----------+\n");
     printf("| PID |  Arrival | Burst | Priority | Completion | Turnaround |  Waiting |\n");
@@ -232,7 +234,7 @@ void display_results(Process processes[], int n)
 
     printf("+-----+----------+-------+----------+------------+------------+----------+\n");
 
-    float avg_wt, avg_tat;
+    
     calculate_metrics(processes, n, &avg_wt, &avg_tat);
     printf("\nAverage Waiting Time: %.2f\n", avg_wt);
     printf("Average Turnaround Time: %.2f\n", avg_tat);
@@ -323,9 +325,160 @@ void display_gantt_chart(GanttBlock gantt[], int gantt_size)
  */
 void preemptive_algorithm(Process processes[], int n, GanttBlock gantt[], int *gantt_size)
 {
-    // TODO: Implement your chosen preemptive algorithm
-    printf("\n[!] Preemptive algorithm not yet implemented.\n");
+    printf("\n===== PREEMPTIVE ROUND ROBIN ALGORITHM =====\n");
+
+    int quantum;
+    printf("Enter time quantum: ");
+    scanf("%d", &quantum);
+    if (quantum <= 0)
+    {
+        printf("Invalid quantum, defaulting to 1.\n");
+        quantum = 1;
+    }
+
+    int time = 0;
+    int completed = 0;
+
+    // Start at earliest arrival (avoid initial negative idle if arrivals start later)
+    int earliest_arrival = processes[0].arrival_time;
+    for (int i = 1; i < n; i++)
+    {
+        if (processes[i].arrival_time < earliest_arrival)
+            earliest_arrival = processes[i].arrival_time;
+    }
+    if (time < earliest_arrival)
+        time = earliest_arrival;
+
+    int queue[MAX_PROCESSES * 10];
+    int front = 0, rear = 0;
+    int in_queue[MAX_PROCESSES] = {0};
+
     *gantt_size = 0;
+
+    while (completed < n)
+    {
+        // 1. Enqueue all processes that have already arrived
+        for (int i = 0; i < n; i++)
+        {
+            if (!processes[i].completed &&
+                processes[i].arrival_time <= time &&
+                processes[i].remaining_time > 0 &&
+                !in_queue[i])
+            {
+                queue[rear++] = i;
+                in_queue[i] = 1;
+            }
+        }
+
+        // 2. If no one is ready, CPU idle until next arrival
+        if (front == rear)
+        {
+            int next_arrival = 1000000000;
+            for (int i = 0; i < n; i++)
+            {
+                if (!processes[i].completed &&
+                    processes[i].arrival_time > time &&
+                    processes[i].arrival_time < next_arrival)
+                {
+                    next_arrival = processes[i].arrival_time;
+                }
+            }
+
+            if (next_arrival == 1000000000)
+                break; // no more work
+
+            // Add/extend IDLE block in Gantt chart
+            if (*gantt_size > 0 &&
+                gantt[*gantt_size - 1].pid == -1 &&
+                gantt[*gantt_size - 1].end_time == time)
+            {
+                // extend existing idle block
+                gantt[*gantt_size - 1].end_time = next_arrival;
+            }
+            else
+            {
+                gantt[*gantt_size].pid = -1; 
+                gantt[*gantt_size].start_time = time;
+                gantt[*gantt_size].end_time = next_arrival;
+                (*gantt_size)++;
+            }
+
+            printf("[IDLE] Time %d -> %d\n", time, next_arrival);
+            time = next_arrival;
+            continue;
+        }
+
+        // 3. Dequeue next process
+        int idx = queue[front++];
+        in_queue[idx] = 0;
+        Process *p = &processes[idx];
+
+        if (p->completed || p->remaining_time <= 0)
+            continue;
+
+        if (!p->started)
+            p->started = 1;
+
+        int start_time = time; 
+
+        int run_for = (p->remaining_time < quantum) ? p->remaining_time : quantum;
+        if (run_for <= 0)
+            continue;
+
+        // 4. Gantt handling: merge with previous block if same PID and contiguous
+        if (*gantt_size > 0 &&
+            gantt[*gantt_size - 1].pid == p->pid &&
+            gantt[*gantt_size - 1].end_time == time)
+        {
+            // extend previous block
+            gantt[*gantt_size - 1].end_time += run_for;
+        }
+        else
+        {
+            // new time block
+            gantt[*gantt_size].pid = p->pid;
+            gantt[*gantt_size].start_time = time;
+            gantt[*gantt_size].end_time = time + run_for;
+            (*gantt_size)++;
+        }
+
+        printf("[P%d] runs from %d to %d (remaining before run: %d)\n",
+               p->pid, time, time + run_for, p->remaining_time);
+
+        time += run_for;
+        p->remaining_time -= run_for;
+
+        // 5. After advancing time, enqueue ONLY NEW arrivals that arrived during (start_time, time]
+        for (int i = 0; i < n; i++)
+        {
+            if (!processes[i].completed &&
+                processes[i].arrival_time > start_time &&
+                processes[i].arrival_time <= time &&
+                processes[i].remaining_time > 0 &&
+                !in_queue[i])
+            {
+                queue[rear++] = i;
+                in_queue[i] = 1;
+            }
+        }
+
+        // 6. Not Finished? *insert_megamind_meme*
+        if (p->remaining_time == 0 && !p->completed)
+        {
+            p->completed = 1;
+            p->completion_time = time;
+            completed++;
+            printf("     [P%d completed at time %d]\n", p->pid, time);
+        }
+        else if (p->remaining_time > 0)
+        {
+            // Not finished: re-enqueue once at the back
+            queue[rear++] = idx;
+            in_queue[idx] = 1;
+        }
+    }
+
+    printf("\nAll processes reached end of Round Robin loop at time %d\n", time);
 }
 
 /*
