@@ -55,6 +55,7 @@ void sort_by_priority(Process processes[], int n);
 void calculate_metrics(Process processes[], int n, float *avg_wt, float *avg_tat);
 void display_results(Process processes[], int n);
 void display_gantt_chart(GanttBlock gantt[], int gantt_size);
+void calculate_and_display_cpu_utilization(GanttBlock gantt[], int gantt_size);
 
 // --- Scheduling Algorithms ---
 // PREEMPTIVE (choose 1 to implement)
@@ -234,7 +235,6 @@ void display_results(Process processes[], int n)
 
     printf("+-----+----------+-------+----------+------------+------------+----------+\n");
 
-    
     calculate_metrics(processes, n, &avg_wt, &avg_tat);
     printf("\nAverage Waiting Time: %.2f\n", avg_wt);
     printf("Average Turnaround Time: %.2f\n", avg_tat);
@@ -306,6 +306,36 @@ void display_gantt_chart(GanttBlock gantt[], int gantt_size)
     printf("\n");
 }
 
+// Calculate and display CPU utilization
+void calculate_and_display_cpu_utilization(GanttBlock gantt[], int gantt_size)
+{
+    if (gantt_size == 0)
+    {
+        printf("CPU Utilization: N/A (no Gantt data)\n");
+        return;
+    }
+
+    int total_time = gantt[gantt_size - 1].end_time - gantt[0].start_time;
+    int idle_time = 0;
+
+    // Calculate total idle time
+    for (int i = 0; i < gantt_size; i++)
+    {
+        if (gantt[i].pid == -1)
+        {
+            idle_time += (gantt[i].end_time - gantt[i].start_time);
+        }
+    }
+
+    int busy_time = total_time - idle_time;
+    float cpu_utilization = (total_time > 0) ? ((float)busy_time / total_time) * 100.0 : 0.0;
+
+    printf("\n===== CPU UTILIZATION =====\n");
+    printf("Total Time: %d\n", total_time);
+    printf("Busy Time: %d\n", busy_time);
+    printf("Idle Time: %d\n", idle_time);
+    printf("CPU Utilization: %.2f%%\n", cpu_utilization);
+}
 // ============================================
 // SCHEDULING ALGORITHMS (STUBS - TO BE IMPLEMENTED)
 // ============================================
@@ -397,7 +427,7 @@ void preemptive_algorithm(Process processes[], int n, GanttBlock gantt[], int *g
             }
             else
             {
-                gantt[*gantt_size].pid = -1; 
+                gantt[*gantt_size].pid = -1;
                 gantt[*gantt_size].start_time = time;
                 gantt[*gantt_size].end_time = next_arrival;
                 (*gantt_size)++;
@@ -419,7 +449,7 @@ void preemptive_algorithm(Process processes[], int n, GanttBlock gantt[], int *g
         if (!p->started)
             p->started = 1;
 
-        int start_time = time; 
+        int start_time = time;
 
         int run_for = (p->remaining_time < quantum) ? p->remaining_time : quantum;
         if (run_for <= 0)
@@ -479,6 +509,9 @@ void preemptive_algorithm(Process processes[], int n, GanttBlock gantt[], int *g
     }
 
     printf("\nAll processes reached end of Round Robin loop at time %d\n", time);
+
+    // Display CPU utilization
+    calculate_and_display_cpu_utilization(gantt, *gantt_size);
 }
 
 /*
@@ -623,6 +656,8 @@ void modified_FCFS_with_aging(Process processes[], int n, GanttBlock gantt[], in
     }
 
     printf("\nAll processes completed at time %d\n", current_time);
+    // Display CPU utilization
+    calculate_and_display_cpu_utilization(gantt, *gantt_size);
 }
 /*
  * NON-PREEMPTIVE ALGORITHM 2
@@ -736,6 +771,8 @@ void non_preemptive_algorithm_2(Process processes[], int n, GanttBlock gantt[], 
     }
 
     printf("\nAll processes completed at time %d\n", current_time);
+    // Display CPU utilization
+    calculate_and_display_cpu_utilization(gantt, *gantt_size);
 }
 
 #endif // FUNCTIONS_H
